@@ -32,11 +32,61 @@ public class Topology {
   private static final Integer DEFAULT_WORKERS = 3;
   private static final Integer DEFAULT_EXECUTORS = 3;
 
+  private static final String DEFAULT_CONSUMER_CONFIG = "etc/consumer.properties";
+  private static final String DEFAULT_PRODUCER_CONFIG = "etc/producer.properties";
+
+  private static final String CONSUMER_CONFIG_OPTNAME = "consumer.config";
+  private static final String PRODUCER_CONFIG_OPTNAME = "producer.config";
+
+  /**
+   * Configuration types.
+   */
+  enum Conf {
+    CONSUMER, PRODUCER
+  }
+
+  /**
+   * Get Option name for configuration type.
+   * @param confType  Configuration type
+   * @return          Option name
+   */
+  private static String getOptionName(Conf confType) {
+    switch (confType) {
+      case CONSUMER:
+        return CONSUMER_CONFIG_OPTNAME;
+      case PRODUCER:
+        return PRODUCER_CONFIG_OPTNAME;
+      default:
+        throw new RuntimeException("Unknown configuration file type.");
+    }
+  }
+
+  /**
+   * Load properties for default or argument passed filename.
+   * @param confType  Configuration type
+   * @param cmd       CommandLine parser
+   * @return          Properties object
+   * @throws IOException
+   */
+  private static Properties loadConfiguration(Conf confType, CommandLine cmd) throws IOException {
+
+    final String optName = getOptionName(confType);
+
+    String consumerConfigFile = DEFAULT_CONSUMER_CONFIG;
+    Properties properties = new Properties();
+    if (cmd.hasOption(optName)) {
+      consumerConfigFile = cmd.getOptionValue(optName);
+    }
+    InputStream consumerPropsIo = new FileInputStream(consumerConfigFile);
+    properties.load(consumerPropsIo);
+    return properties;
+  }
+
   /**
    * Main program.
    * @param args Argument string array
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
 
     // Parser
     CommandLineParser parser = new DefaultParser();
@@ -121,37 +171,9 @@ public class Topology {
       TopologyBuilder builder = new TopologyBuilder();
 
       // Kafka write hosts
-      final Properties consumerProperties = new Properties();
-      try {
-        String consumerConfigFile = "etc/consumer.properties";
-        if (line.hasOption("consumer.config")) {
-          consumerConfigFile = line.getOptionValue("consumer.config");
-        }
-        InputStream consumerPropsIo = new FileInputStream(consumerConfigFile);
-        consumerProperties.load(consumerPropsIo);
-      } catch (FileNotFoundException e) {
-        e.printStackTrace();
-        System.exit(127);
-      } catch (IOException e) {
-        e.printStackTrace();
-        System.exit(127);
-      }
+      final Properties consumerProperties = loadConfiguration(Conf.CONSUMER, line);
+      final Properties producerProperties = loadConfiguration(Conf.PRODUCER, line);
 
-      final Properties producerProperties = new Properties();
-      try {
-        String producerConfigFile = "etc/producer.properties";
-        if (line.hasOption("producer.config")) {
-          producerConfigFile = line.getOptionValue("producer.config");
-        }
-        InputStream producerPropsIo = new FileInputStream(producerConfigFile);
-        producerProperties.load(producerPropsIo);
-      } catch (FileNotFoundException e) {
-        e.printStackTrace();
-        System.exit(127);
-      } catch (IOException e) {
-        e.printStackTrace();
-        System.exit(127);
-      }
 
       // Split topics and add a Spout-Producer pair
       final List<String> topics = Arrays.asList(line.getOptionValue("topic").split(","));
@@ -189,20 +211,6 @@ public class Topology {
     } catch (MissingOptionException e) {
       System.err.println(e.getMessage());
       printHelp(options, 127);
-    } catch (ParseException e) {
-      e.printStackTrace();
-    } catch (InvalidTopologyException e) {
-      e.printStackTrace();
-    } catch (AlreadyAliveException e) {
-      e.printStackTrace();
-    } catch (AuthorizationException e) {
-      e.printStackTrace();
-    } catch (IllegalAccessException e) {
-      e.printStackTrace();
-    } catch (InstantiationException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
     }
 
   }
