@@ -1,0 +1,12 @@
+.project
+.classpath
+.idea
+.gradle
+target/
+
+*.iml
+*.ipr
+*.iws
+build/
+
+sonar-project.properties

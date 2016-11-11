@@ -1,0 +1,78 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'checkstyle'
+
+apply from: 'config.gradle'
+
+// Checkstyle plugin configuration
+checkstyle.toolVersion = '6.11.2'
+
+// Source/target JDK version
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+// Versioning using git tags
+apply from: 'git-version.gradle'
+
+// Build dependencies
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
+    }
+}
+apply plugin: 'eu.appsatori.fatjar'
+
+// Maven repositories
+repositories {
+  mavenCentral()
+  mavenLocal()
+  maven {
+    url "http://clojars.org/repo/"
+  }
+}
+
+// Dependencies
+dependencies {
+
+  // Storm core and kafka integration
+  compile 'org.apache.storm:storm-core:1.0.2', {
+    ext {
+      fatJarExclude = true
+    }
+  }
+  compile 'org.apache.storm:storm-kafka:1.0.2'
+
+  // Kafka
+  compile ('org.apache.kafka:kafka_2.11:0.9.0.1') {
+    exclude group: 'log4j', module:'log4j'
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    exclude group: 'org.apache.zookeeper', module: 'zookeeper'
+  }
+
+  // commons-cli for arguments parsing
+  compile 'commons-cli:commons-cli:1.3.1'
+
+  // Tests
+  testCompile 'junit:junit:4.11'
+}
+
+// Fat jar is for live deployment
+fatJar {
+  classifier = "jar-with-dependencies"
+}
+
+// Create a distributable package for testing purposes
+tasks.create(name: "releaseTarGz", dependsOn: configurations.archives.artifacts, type: Tar) {
+  description = "Creates a distributable package"
+  into "kafka-mirror-" + version
+  compression = Compression.GZIP
+  from(project.file("bin")) { into "bin/" }
+  from(project.file("etc")) { into "etc/" }
+  from(configurations.runtime) { into("lib/") }
+  from(configurations.archives.artifacts.files) { into("lib/") }
+  from '../LICENSE'
+}

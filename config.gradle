@@ -1,0 +1,7 @@
+// Set groupId
+group = "com.logitravel"
+
+// Convert groupId + project to namespace and path
+ext.groupProject =  group + "." + project.name
+ext.groupRoute = ext.groupProject.toString().replace("-",".")
+ext.groupPath = ext.groupRoute.toString().replace(".","/")

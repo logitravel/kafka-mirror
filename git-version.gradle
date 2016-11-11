@@ -1,0 +1,49 @@
+// Functions that return revision, tag and branch from git repository
+
+// Git revision short hash
+def getRev() {
+  def cmd = "git rev-parse --short HEAD"
+  def proc = cmd.execute()
+  def revision = proc.text.trim()
+  return revision
+}
+
+// Get last tagged commit
+def getLastTag() {
+  def cmd = "git rev-list --tags --no-walk --max-count=1"
+  def proc = cmd.execute()
+  def out = proc.text.trim()
+  if (out != "") {
+    return out
+  }
+  return null
+}
+
+// Get tag if found or 0.1 if not
+def getTag() {
+  def lastTag = getLastTag()
+  if (lastTag == null) {
+    return "0.1"
+  }
+  def cmd = "git describe --tags "
+  def proc = cmd.execute()
+  def out = proc.text.trim()
+  if (out != "") {
+    return out
+  }
+  return "0.1"
+}
+
+// Check if HEAD revision is the same as last tag
+def isHeadLastTag() {
+  def cmd = "git rev-list " + getTag() + "..HEAD --count"
+  def proc = cmd.execute()
+  def out = proc.text.trim()
+  if (out != "") {
+    return out == "0"
+  }
+  return false
+}
+
+// Set tagged version, or untagget + SNAPSHOT keyword
+version = ( isHeadLastTag() ? getTag() : getTag() + '-SNAPSHOT')
