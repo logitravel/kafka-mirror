@@ -1,5 +1,9 @@
 package com.logitravel.kafka.mirror;
 
+import backtype.storm.Config;
+import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
+import backtype.storm.topology.TopologyBuilder;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -7,22 +11,15 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.AlreadyAliveException;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.InvalidTopologyException;
-import org.apache.storm.topology.TopologyBuilder;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+
+import static storm.kafka.bolt.KafkaBolt.KAFKA_BROKER_PROPERTIES;
 
 /**
  * Topology definition.
@@ -173,6 +170,7 @@ public class Topology {
       // Kafka write hosts
       final Properties consumerProperties = loadConfiguration(Conf.CONSUMER, line);
       final Properties producerProperties = loadConfiguration(Conf.PRODUCER, line);
+      conf.put(KAFKA_BROKER_PROPERTIES, producerProperties);
 
 
       // Split topics and add a Spout-Producer pair
@@ -189,7 +187,7 @@ public class Topology {
 
         // Setup bolt
         builder.setBolt(producerName,
-                        new KafkaProducer(topic, producerProperties),
+                        new KafkaProducer(topic),
                         Integer.valueOf(executors))
                .shuffleGrouping(consumerName);
       }

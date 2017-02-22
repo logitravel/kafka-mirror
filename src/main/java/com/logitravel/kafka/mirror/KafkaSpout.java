@@ -1,11 +1,9 @@
 package com.logitravel.kafka.mirror;
 
-import org.apache.storm.kafka.SpoutConfig;
-import org.apache.storm.kafka.ZkHosts;
-import org.apache.storm.spout.Scheme;
-import org.apache.storm.spout.SchemeAsMultiScheme;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
+import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.tuple.Fields;
+import storm.kafka.SpoutConfig;
+import storm.kafka.ZkHosts;
 
 import java.util.Properties;
 import java.util.UUID;
@@ -13,7 +11,7 @@ import java.util.UUID;
 /**
  * KafkaSpout.
  */
-public class KafkaSpout extends org.apache.storm.kafka.KafkaSpout {
+public class KafkaSpout extends storm.kafka.KafkaSpout {
 
   /**
    * Creates a Kafka spout.
@@ -40,13 +38,6 @@ public class KafkaSpout extends org.apache.storm.kafka.KafkaSpout {
 
     // Spout config
     SpoutConfig conf = new SpoutConfig(zkHosts, topic, "/kafka-mirror/" + topic, clientId);
-
-    // Get scheme classname from properties or use StringScheme by default
-    String schemeClassname = (String) props.getOrDefault("spout.scheme",
-                                                         "org.apache.storm.kafka.StringScheme");
-
-    Class<?> clazz = Class.forName(schemeClassname);
-    conf.scheme = new SchemeAsMultiScheme((Scheme) clazz.newInstance());
     return conf;
   }
 
